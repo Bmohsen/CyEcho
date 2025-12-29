@@ -1,6 +1,10 @@
 ﻿# ⌨️ CyEcho
 **A minimalist, high-performance mechanical keyboard sound emulator.**
 
+<p align="center">
+  <img src="resources/cyecho.webp" alt="CyEcho Banner" width="100%">
+</p>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078d4.svg)]()
 [![C++20](https://img.shields.io/badge/C++-20-blue.svg)]()
@@ -51,6 +55,7 @@ cmake --build build --config Release
 ```
 ---
 ## 📂 Project Structure
+```
 CyEcho/
 ├── src/
 │   ├── main.cpp          # TUI, System Tray, & Window Styles
@@ -59,7 +64,7 @@ CyEcho/
 ├── resources/            # Sound Profiles (JSON + OGG/WAV)
 ├── include/              # Header files
 └── cmake/                # Build configurations
-
+```
 ---
 ## 🤝 Contributing
 #### Contributions are welcome! Whether it's a bug fix, a new feature, or a new sound pack, feel free to open a Pull Request.
