@@ -1,57 +1,77 @@
 ﻿cmake_minimum_required (VERSION 3.20)
-
 project("CyEcho" LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# --- FetchContent for libuiohook ---
 include(FetchContent)
+
+# --- libuiohook ---
 FetchContent_Declare(
     libuiohook 
     GIT_REPOSITORY https://github.com/kwhat/libuiohook 
     GIT_TAG 1.2.2
+    GIT_SHALLOW TRUE
 )
-FetchContent_Declare(ftxui
-  GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
-  GIT_TAG v6.1.9
-)
- 
 
-# libuiohook specific options: Build it as a static library to avoid DLL issues
-set(USE_X11 ON CACHE INTERNAL "")
+# --- ImGui ---
+FetchContent_Declare(
+    imgui 
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git 
+    GIT_TAG docking
+    GIT_SHALLOW TRUE
+)
+
+# Global settings for dependencies
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
 set(BUILD_DEMOS OFF CACHE INTERNAL "")
-set(RES_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-set(RES_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
+set(USE_X11 ON CACHE INTERNAL "")
 
-FetchContent_MakeAvailable(libuiohook)
-FetchContent_MakeAvailable(ftxui)
-# --- Source Files ---
-# Note: It's better to list files or use a specific directory 
-# than GLOB, but for small projects, this works.
+FetchContent_MakeAvailable(libuiohook imgui)
+file(GLOB IMGUI_SOURCES "${imgui_SOURCE_DIR}/*.cpp")
+add_library(imgui STATIC ${IMGUI_SOURCES})
+set(IMGUI_BACKENDS
+    "${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp"
+    "${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp"
+)
+
 file(GLOB_RECURSE APP_SOURCES 
     "src/*.cpp" 
     "src/*.h"
+    "src/*.hpp"
     "src/*.c"
 )
 
+if(WIN32)
+    set(RES_FILE "resources.rc")
+endif()
+
 # --- Executable Target ---
-add_executable(CyEcho ${APP_SOURCES})
+# WIN32 flag hides the console and expects WinMain
+add_executable(CyEcho WIN32 ${APP_SOURCES} ${IMGUI_BACKENDS} ${RES_FILE})
 
-
-target_include_directories(CyEcho PRIVATE src)
-
-target_link_libraries(CyEcho PRIVATE 
-    uiohook
-      PRIVATE ftxui::screen
-      PRIVATE ftxui::dom
-      PRIVATE ftxui::component
+# --- Include Directories ---
+target_include_directories(CyEcho PRIVATE 
+    src 
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
 )
 
-file(COPY "${RES_SOURCE_DIR}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+# --- Linking ---
+target_link_libraries(CyEcho PRIVATE 
+    uiohook
+    imgui
+    d3d11
+    d3dcompiler
+    dwmapi
+    comctl32
+)
 
+# --- Resource Handling ---
+set(RES_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+set(RES_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 
+# Ensure directory exists and copy
 add_custom_command(TARGET CyEcho POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${RES_SOURCE_DIR}"
@@ -59,13 +79,11 @@ add_custom_command(TARGET CyEcho POST_BUILD
     COMMENT "Copying resources to build directory..."
 )
 
-# OS Specific requirements for libuiohook
+# OS Specific requirements
 if(APPLE)
     target_link_libraries(CyEcho PRIVATE 
         "-framework Cocoa"
         "-framework IOKit"
         "-framework AppKit"
     )
-elseif(WIN32)
-    target_link_libraries(CyEcho PRIVATE comctl32)
 endif()

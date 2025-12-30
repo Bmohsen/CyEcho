@@ -10,11 +10,11 @@ namespace Play {
 		uint64_t duration_ms;
 	};
 
-	class Player {
+	class alignas(16) Player {
 	public:
 		Player(const std::string& folderPath);
 		~Player();
-		void playKey(unsigned short uihook_code);
+		void playKey(unsigned short uihook_code, float currentVolume);
 		void loadProfile(const std::string& folderPath);
 	private:
 		ma_engine engine;

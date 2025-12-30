@@ -4,8 +4,10 @@
 #include <set>
 
 namespace KeyCapture {
-	Play::Player global_player("resources/black_abs");
+	std::unique_ptr<Play::Player> global_player = nullptr;
 	std::set<unsigned short> pressed_keys;
+	AudioConfig config;
+
 	std::string get_key_name(unsigned short code) {
 		static const std::map<unsigned short, std::string> m = {
 		{VC_ESCAPE, "Escape"}, {VC_F1, "F1"}, {VC_F2, "F2"}, {VC_F3, "F3"}, {VC_F4, "F4"},
@@ -45,11 +47,14 @@ namespace KeyCapture {
 
 	void dispatch_proc(uiohook_event* event) {
 		if (event->type == EVENT_KEY_PRESSED) {
-			unsigned short code = event->data.keyboard.keycode;
-			if (pressed_keys.find(code) == pressed_keys.end()) {
-				pressed_keys.insert(code);
-				global_player.playKey(code);
+			if (global_player != nullptr) {
+				unsigned short code = event->data.keyboard.keycode;
+				if (pressed_keys.find(code) == pressed_keys.end()) {
+					pressed_keys.insert(code);
+					global_player->playKey(code, config.volume.load());
+				}
 			}
+			
 		}
 		else if (event->type == EVENT_KEY_RELEASED) {
 			unsigned short code = event->data.keyboard.keycode;
